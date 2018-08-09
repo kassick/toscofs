@@ -1,0 +1,263 @@
+% LaTex source code
+% File: "unitest.sty"
+% Created: "Ter, 14 Jul 2015 14:30:43 -0300 (kassick)"
+% Updated: "Ter, 15 Set 2015 17:04:12 -0300 (kassick)"
+% $Id$
+% Copyright (C) 2015, Rodrigo Virote Kassick <kassick@gmail.com>
+
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{teststype}
+[2015/07/14 v0.01 LaTeX package for Tests/Exams/Exercises]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Options
+
+\RequirePackage{kvoptions}
+
+\SetupKeyvalOptions{
+    family=teststype,
+    prefix=teststype@,
+}
+
+\DeclareStringOption[UNIVERSITY]{university}
+\DeclareStringOption[INSTITUTE]{institute}
+\DeclareStringOption[]{courseid}
+\DeclareStringOption[]{coursename}
+\DeclareStringOption[PROFESSOR]{professorname}
+\DeclareStringOption[]{class}
+\DeclareStringOption[]{semester}
+\DeclareStringOption[\today]{date}
+\DeclareStringOption[]{description}
+\DeclareStringOption[]{totalpoints}
+\DeclareBoolOption[false]{resit}
+\DeclareBoolOption[true]{gradingtable}
+\DeclareBoolOption[true]{border}
+\DeclareStringOption[Quest\~{a}o]{sectionname}
+%\RequirePackage{kvoptions}
+\RequirePackage{calc}
+\RequirePackage[a4paper, hmargin={1cm,1cm},vmargin={2.5cm, 3.30cm}, headsep=1.5cm, ignoreall]{geometry}
+\RequirePackage{fancybox}
+\RequirePackage{lastpage}
+\RequirePackage{fancyhdr}
+\RequirePackage{ifthen}             % Útil para construir comandos de latex
+\RequirePackage{xparse}
+\RequirePackage{xspace}             % Insere um espaço SSE o próximo caracter nâo for de pontuação.
+\RequirePackage{scalerel}
+\RequirePackage{ragged2e}
+\RequirePackage{everypage}
+\RequirePackage{pict2e}
+\RequirePackage{amsmath,amssymb,latexsym}         % simbolos, fontes, etc
+\RequirePackage{everyshi}
+%\RequirePackage{array} % DO NOT USE ARRAY OR TABLES WILL BREAK DOOOOOOOOM
+
+\ProcessKeyvalOptions*
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Prepara layout e cabeçalhos
+%
+
+\newboolean{questionsfinished}
+\setboolean{questionsfinished}{false}
+
+\newcommand{\finishgrading}{
+        \setboolean{questionsfinished}{true}
+}
+
+\setlength{\headheight}{72pt}
+%\setlength{\headheight}{1.5cm}
+\setlength{\parindent}{0mm}
+\setlength{\parskip}{4pt}
+
+\fancyhf{}
+\ifteststype@border
+    \fancyput(3.12in,-4.85in){\setlength{\unitlength}{1in}\oval(7.9,11.3)}
+\else
+\fi
+
+\lhead
+{ 
+    {\bf \teststype@university} \\
+    \teststype@institute \\
+    Prof. \teststype@professorname \\
+    \ifthenelse{\not \boolean{questionsfinished}}{%
+        \hrule
+        \vspace{10pt}{\sc Matrícula:}\vspace{5pt}
+    }{
+    }
+}
+\chead
+{ 
+    ~ \\
+    ~ \\
+        ~ \\
+    \ifthenelse{\not \boolean{questionsfinished}}{%
+        \vspace{10pt}{\sc Nome:}\vspace{5pt}
+    }{
+    }
+}
+\rhead
+{
+    \ifthenelse{\equal{\teststype@courseid}{}}{% Sem código de cadeira, ignora nome também
+    }{{\bf \teststype@courseid ~-~ \teststype@coursename}%
+    }\\
+    \ifthenelse{\equal{\teststype@semester}{}}{% Sem semestre
+    }{
+        Período {\teststype@semester}
+        \ifthenelse{\equal{\teststype@class}{}}{}{~-~}
+    }
+    \ifthenelse{\equal{\teststype@class}{}}{
+    }{
+        Turma \teststype@class
+    }\\
+    \ifthenelse{\equal{\teststype@description}{}}{% sem idprova, não mostra nada
+    }{
+        {\bf \teststype@description} \ifthenelse{\equal{\teststype@date}{}}{}{~-~} % sem data, não precisa traço
+    }
+    \ifthenelse{\equal{\teststype@date}{}}{% Não mostra nada sem data
+    }{\teststype@date
+    }\\
+    \ifthenelse{\not \boolean{questionsfinished}}{%
+        \vspace{10pt}~\vspace{5pt}
+    }{
+    }
+}
+\lfoot{}
+\cfoot{}
+
+\rfoot{ \ifthenelse{\not \boolean{questionsfinished} \and \not \value{page}=\pageref{LastPage}}
+                    {\bf Continua na página seguinte}
+                    {}
+}
+
+%\def\notaheadline{}
+%\def\notavalueline{}
+
+\AtBeginDocument{\pagestyle{fancy}
+    % make the table
+    \@ifundefined{notaheader}{
+        %nothing
+    }{
+        \ifteststype@gradingtable
+            \makeatletter
+            \begin{centering}
+                \small
+                \begin{tabular}{r\notatabparm||c|}
+                    \cline{2-\teststype@notanumcols}
+                    Questão:&       \notaheader          {\bfseries ~~~~~~Total~~~~~~} \\
+                    \cline{2-\teststype@notanumcols}
+                    Pontos: &       \notapontos          \teststype@totalpoints \\
+                    \cline{2-\teststype@notanumcols}
+                    ~       &       \notaval                    \\
+                    ~       &       \notaval                    \\
+                    ~       &       \notaval                    \\
+                    \cline{2-\teststype@notanumcols}
+                \end{tabular}~\ifteststype@resit
+                    \hfill~\begin{tabular}{|p{3cm}|}
+                                \hline
+                                \textbf{Substitui Grau} \\
+                                \hline
+                                \vspace{1cm} \\
+                                \hline
+                           \end{tabular}
+                \else
+                \fi
+            \end{centering}
+            \makeatother
+        \else
+        \fi
+    }
+    \vspace{0.5cm}
+
+    \def\notatabparm{}
+    \def\notaheader{}
+    \def\notapontos{}
+    \def\notaval{}
+}
+
+% Environment: framedminipage -- a minipage with a frame around it
+
+
+\newsavebox{\fminipagebox}
+\NewDocumentEnvironment{framedminipage}{m O{\fboxsep}}
+ {\kern#2\noindent\begin{lrbox}{\fminipagebox}
+  \begin{minipage}{#1}\ignorespaces}
+ {\end{minipage}\end{lrbox}%
+  \makebox[#1]{%
+    \kern\dimexpr-\fboxsep-\fboxrule\relax
+    \fbox{\usebox{\fminipagebox}}%
+    \kern\dimexpr-\fboxsep-\fboxrule\relax
+  }\kern#2
+ }
+
+
+%Contadores da Questão
+\newcounter{numquestao}
+\setcounter{numquestao}{0}
+
+\DeclareDocumentCommand \questionvalue { m } {%
+    \IfNoValueTF{#1} {%
+        % nothing
+    }{%
+        %(#1 \ifthenelse{#1 > 1.0}{pontos}{ponto})
+        (#1 pontos)
+    }
+}
+
+\DeclareDocumentCommand \questionvaluesimple { m } {%
+    \IfNoValueTF{#1}{~}{#1}
+}
+
+\DeclareDocumentCommand \questionidheader { m } {%
+    {\bfseries #1}
+}
+
+
+%\makeatletter
+%\renewcommand\section{\@startsection {section}{1}{\z@ Quest\~{a}o~}%
+%    {10pt}
+%    {0pt}
+%    {\normalfont\bf\scshape}~}
+%\makeatother
+
+
+\DeclareDocumentCommand \question { o } {%
+    \xdef\thisponto{\questionvaluesimple{#1}}
+    \xdef\thispontolong{\questionvalue{#1}}
+    \refstepcounter{numquestao}
+    \@startsection{section}{1}{0mm}{10pt}{0pt}{\normalfont\bf \teststype@sectionname ~ \arabic{numquestao}}*{\xspace\thispontolong : \hspace{1em}}
+    \makeatletter
+    \xdef\thisheader{\questionidheader{\arabic{numquestao}}}
+    \edef\notatabparm{\notatabparm|c}
+    \def\emptyspace{ }
+    \edef\notaheader{\notaheader \thisheader & }
+    \edef\notapontos{\notapontos \thisponto & }
+    \edef\notaval{\notaval ~~~~~~~~~~~~~  & }
+    \makeatother
+}
+
+
+%\DeclareDocumentEnvironment{bigquestion}{ o }{%
+%    \begin{minipage}{\textwidth}
+%        \refstepcounter{numquestao} \textbf{Questão \thenumquestao \xspace \questionvalue{#1}}:
+%}{%
+%    \end{minipage}
+%    \vspace{0.5cm}
+%    %\vfill
+%}
+
+\AtEndDocument{
+    \immediate\write\@auxout{\string\xdef\string\notatabparm{\notatabparm}}
+
+    \immediate\write\@auxout{\string\xdef\string\notaheader{\notaheader}}
+    
+    \immediate\write\@auxout{\string\xdef\string\notapontos{\notapontos}}
+
+    \immediate\write\@auxout{\string\xdef\string\notaval{\notaval}}
+
+    
+
+    % numero de colunas na tabea de nots é nro de questão + 2
+    \addtocounter{numquestao}{2}
+    \immediate\write\@auxout{\string\xdef\string\teststype@notanumcols{\arabic{numquestao}}}
+
+}
+\endinput

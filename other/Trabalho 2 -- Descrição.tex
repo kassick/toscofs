@@ -1,0 +1,257 @@
+% LaTex source code
+% File: "Trabalho 2 -- Descrição.tex"
+% Created: "Sex, 20 Nov 2015 21:50:45 -0200 (kassick)"
+% Updated: "2017-10-26 17:07:37 kassick"
+% $Id$
+% Copyright (C) 2015, Rodrigo Virote Kassick <rvkassick@inf.ufrgs.br>
+
+\documentclass[a4paper, oneside,12pt]{article}
+\usepackage[portuguese]{babel}
+\usepackage[]{hyphenat}
+\usepackage{ifxetex}
+\usepackage{listings}
+\usepackage[%
+        bookmarksnumbered=true,
+        breaklinks=true,
+        unicode=true,
+        colorlinks=true,
+        anchorcolor=black,
+        citecolor=black,
+        filecolor=black,
+        linkcolor=black,
+        urlcolor=black
+]{hyperref}[2009/10/09]
+\usepackage{enumitem}
+\usepackage[sharp]{easylist}
+\usepackage{multicol}
+\usepackage{mathtools}
+\usepackage{amsmath,amssymb,latexsym}         % simbolos, fontes, etc
+\usepackage{wasysym}
+%\usepackage{circuitikz}
+%\usepackage{amsmath}
+\usepackage{indentfirst}
+
+\ifxetex
+    \usepackage{tgtermes}
+\else
+    \usepackage[utf-8]{inputenc}
+    \usepackage{times}              % pacote para usar fonte Adobe Times
+    \usepackage[T1]{fontenc}
+\fi
+
+\usepackage[university={Uniritter -- Laureate International Universities$^{\noexpand\circledR}$},
+            institute={Faculdade de Informática},
+            courseid=INF0024,
+            coursename={Sistemas Operacionais II},
+            professorname={Rodrigo Kassick},
+            %class={PNA},
+            %semester={2015-2},
+            border=false,
+            gradingtable=false,
+            sectionname={Exercício},
+            description={Trabalho Prático},
+            date={}]{unitest}
+\begin{document}
+
+\finishgrading    % Evita que apareça nome de aluno no topo da página
+
+\section{Descrição do Trabalho} \label{sec:desc_prob}
+
+É trabalho do sistema operacional gerenciar dispositivos de armazenamento e fornecer ao usuário uma noção conveniente -- como arquivos e pastas -- para trabalhar com seus programas.
+
+A tarefa de um \textbf{sistema de arquivos} é justamente a de organizar algum meio de armazenamento em arquivos e diretórios.
+
+O trabalho consiste em implementar um sistema de arquivos simples com diretório único e i-node de apenas um nível.
+
+
+O sistema de arquivos a ser implementado fornecerá funções básicas (como open, read, write, etc.) e fará as alterações no disco simulado.
+
+Todas as alterações no sistema de arquivos deverão ser refletidas no disco.
+
+
+\section{Funções a Implementar}
+
+As seguintes funções devem estar implementadas para o funcionamento do sistema de arquivos:
+
+\begin{itemize}
+    \item \texttt{mkfs} -- Cria um sistema de arquivos no disco (simulado). Esta função deverá escrever no disco o superblock, o bitmap e um diretório raiz vazio.
+
+    \item \texttt{mount} -- Cria uma instância do sistema de arquivos a partir do conteúdo de um disco. Em algum momento, este disco teve o sistema de arquivos criado com mkfs. Porém, deve ser possível \emph{montar} o sistema de arquivos em execuções subsequentes do programa sem precisar recriá-lo.
+
+        ``Montar'' significa que iremos carregar para a memória, pelo menos, a posição no disco onde se encontra o diretório raiz.
+
+    \item \texttt{lsdir} -- Retorna um vetor ou lista com os nomes e o tamanho de cada arquivo do diretório.
+
+    \item \texttt{create\_file(fname)} -- Cria um novo arquivo com o nome fornecido. Deverá ser refletido no disco a criação de um novo i-node para este arquivo, bem como a alteração no diretório.
+
+        Lembre-se que, como um i-node ocupa espaço, o bloco deverá ser marcado como ocupado no bitmap, e a alteração no bitmap deverá ser refletida no disco.
+
+    \item \texttt{delete\_file(fname)} -- Remove um arquivo. A entrada do diretório deverá ser apagada e todos os i-nodes associados com o arquivo deverão ser liberados.
+
+    \item \texttt{open\_file(fname) -> file\_handle} -- Abre o arquivo com o nome fornecido e devolve um \emph{handle}. O handle pode ser uma classe \texttt{File} na qual deve ser possível chamar as funções de \emph{read} e \emph{write}.
+
+        O handle deve estar associado ao i-node do arquivo (seja em memória ou em disco).
+
+    \item \texttt{file\_write(handle, posicao, tamanho, bytes)} -- Escreve no arquivo aberto uma sequência de \texttt{tamanho} bytes posição \texttt{posicao}.
+
+        Lembre-se que operações de escrita podem alterar o tamanho do arquivo. A operação também pode alterar o mapeamento dentro do i-node (por exemplo, foi escrito algo para um bloco pela primeira vez).
+
+    \item \texttt{file\_read(handle, posicao, tamanho) -> bytes[]} -- Lê do arquivo aberto uma sequência de \texttt{tamanho} bytes a partir da posição \texttt{posicao}.
+
+\end{itemize}
+
+
+
+
+\section{Exemplo de Uso}
+
+\begin{lstlisting}[language=C]
+    disk_t * disk = disk_new("arquivo.dat");
+    mkfs(disk);
+    fs = mount(disk);
+    create_file(fs, "arquivo1");
+    int fd = open_file(fs, "arquivo1");
+    file_write(fs, fd, 10, strlen("teste"), "teste");
+\end{lstlisting}
+
+\section{O Disco}
+\label{sub:Disco}
+
+O trabalho deverá utilizar um disco simulado (ver implementações de referência) capaz de fazer leitura e escritas de setores (e.g. 512 bytes), armazenando os dados em um arquivo ou outro meio de armazenamento.
+
+O setor setor é um vetor de \textbf{bytes} de tamanho fixo (e.g. 512 ou 4096). Um disco contém uma quantidade fixa de setores, que são identificados por um número sequencial (i.e. setor 1, setor 2, ...)
+
+São fornecidas funções de referência em C, C++ e Java para o disco.
+
+As funções que o disco deve suportar são:
+
+\begin{itemize}
+    \item \texttt{new} -- Cria um novo \emph{objeto} disco utilizando um arquivo específico como armazenamento. E.g.:
+        \begin{lstlisting}[language=c]
+            // Novo disco simulado com 2000 setores
+            disk_t * disk = disk_new("arquivo.dat", 2000);
+        \end{lstlisting}
+
+        ou
+
+        \begin{lstlisting}[language=java]
+            // Novo disco simulado com 2000 setores
+            Disk d = new Disk("arquivo.dat", 2000);
+        \end{lstlisting}
+
+    \item \texttt{write\_sector} -- Escreve o conteúdo de um buffer da memória em um \textbf{setor} (i.e. vetor de tamanho fixo) no disco. O buffer de memória tem que ser to exato tamanho do setor do disco. E.g.:
+
+        \begin{lstlisting}[language=c]
+            char conteudo_setor[SECTOR_SIZE];
+            // preenche setor
+            // Escreve o conteudo no setor de nro 5
+            disk_write(disk, 5, conteudo_setor);
+        \end{lstlisting}
+
+        ou
+
+        \begin{lstlisting}[language=java]
+            byte[] data = new byte[Disk.SECTOR_SIZE];
+            // preenche data
+            d.write_sector(1, data);
+        \end{lstlisting}
+
+    \item \texttt{read\_sector} -- Lê o conteúdo de um setor do disco para a memória. E.g.
+
+        \begin{lstlisting}[language=c]
+            char conteudo_setor[SECTOR_SIZE];
+            // Escreve o conteudo no setor de nro 5
+            disk_read(disk, 5, conteudo_setor);
+            // Usa conteudo_setor
+        \end{lstlisting}
+
+        ou
+
+        \begin{lstlisting}[language=java]
+            byte[] data = new byte[Disk.SECTOR_SIZE];
+            d.read_sector(1, data);
+            // Decodifica data
+        \end{lstlisting}
+
+\end{itemize}
+
+\section{O Diretório}
+
+O sistema de arquivos a ser desenvolvido necessita ter um único diretório -- o diretório raiz. Todos os arquivos são criados neste diretório.
+
+O diretório raiz deve ser capaz de conter \emph{pelo menos} 32 nomes de arquivos (i.e. poderemos criar até 32 arquivos). O tamanho do nome de arquivo e a maneira de organizar os nomes de arquivos dentro dos blocos é livre. Sugere-se uma estrutura de tabela simples (vetor de struct, com nome de tamanho máximo definido).
+
+Cada nome de arquivo deste diretório apontar para um \emph{i-node} no disco. A informação de mapeamento dos blocos do arquivo para os setores do disco devem estar no \emph{i-node}, não na entrada de diretório do arquivo.
+
+\section{I-Node}
+
+O \emph{i-node} do sistema de arquivos deve fornecer o mapeamento entre os blocos do arquivo e os setores do disco que armazenam os blocos.
+
+Isto é, ele deverá ser alguma estrutura na qual o acesso à posição \texttt{n} indique onde no disco está guardado o n-ésimo bloco do arquivo.
+\begin{lstlisting}[language=C]
+    pritnf("O bloco %d está guardado na posição %d\n",
+                     n,                         inode->mapping[n]);
+\end{lstlisting}
+
+Esta tabela pode ser de apenas um nível (i.e. sem ponteiros para outros blocos com ponteiros para setores). Caso seja utilizada esta estratégia, lembre-se que o tamanho do arquivo estará limitado a um número pequeno (e.g. 2MB).
+
+Estratégias com blocos de continuação e endereçamento de 2 ou 3 níveis, se feitas corretamente, podem garantir pontos extras.
+
+
+\section{Gerenciamento de espaço livre}
+\label{sub:gerenciamento_de_espaco_livre}
+
+O sistema de arquivos deve gerenciar quais blocos estão livres tanto para gravar estruturas do sistema de arquivos quanto os próprios dados dos arquivos (conteúdo).
+
+Sugere-se utilizar uma estrutura de \emph{bitmap} como vista em aula. Uma implementação de referência está disponível em linguagem C. Linguagens como Java, C++ e C\# fornecem estruturas de dados de bitmap que se comportam como vetores de valores booleanos.
+
+Lembre-se que esta estrutura deverá, posteriormente, ser convertida em setores, que são vetores de bytes. Este processo (serialização) é dependente da linguagem de programação utilizada.
+
+\begin{itemize}
+    \item Java: java.util.BitSet ; Utilize a função toBytes() para serializar a estrutura em uma sequência de bytes que poderá, depois, ser gravada em setores do disco.
+
+    \item C++: {\tt std::vector<bool>} . Para fazer a serialização, utilize o código a seguir\footnote{\url{http://stackoverflow.com/questions/4666450/how-does-one-store-a-vectorbool-or-a-bitset-into-a-file-but-bit-wise}}:
+        \begin{lstlisting}[language=C++]
+            std::vector<bool> data(nblocks);
+            /* obtain bits somehow */
+
+            // Reserve an appropriate number of byte-sized buckets.
+            std::vector<char> bytes((int)std::ceil((float)data.size() / CHAR_BITS));
+
+            for(int byteIndex = 0; byteIndex < bytes.size(); ++byteIndex) {
+               for(int bitIndex = 0; bitIndex < CHAR_BITS; ++bitIndex) {
+                   int bit = data[byteIndex * CHAR_BITS + bitIndex];
+
+                   bytes[byteIndex] |= bit << bitIndex;
+               }
+            }
+        \end{lstlisting}
+
+    \item C\#: System.Collections.BitArray . Para serializar, utilize o BinaryFormatter\footnote{Ver \url{https://social.msdn.microsoft.com/Forums/vstudio/en-US/650bd86a-3f32-4629-921c-8baf20754505/save-bitarray-type-to-binary-file}}.
+
+        \begin{lstlisting}[language={[Sharp]C}, showspaces=false ]
+            BitArray occupied = new BitArray(nblocks, false);
+            // ... preenche occupied
+            Byte[] bytes = new Byte[Math.Ceiling(nblocks/8.0)];
+            MemoryStream ms = MemoryStream(bytes);
+            BinaryFormatter BF = new BinaryFormatter();
+            BF.serialize(ms, occupied);
+            // bytes contem os dados a serem gravados nos setores
+        \end{lstlisting}
+
+\end{itemize}
+
+Lembre-se que as estruturas do sistema de arquivos ocupam espaço em disco, e portanto o bitmap deve saber que os blocos utilizados por estas estruturas estarão ocupados (i.e. diretório, i-nodes, superblock, o próprio bitmap, além dos blocos que guardam dados dos arquivos).
+
+Quando algum novo bloco precisar ser ocupado no sistema de arquivos, localize uma posição no bitmap que não esteja marcada como ocupada, altere o bitmap e utilize a posição como número do bloco que estava livre.
+
+Sempre que um novo arquivo for criado, pelo menos um bloco será ocupado por seu i-node. Os blocos de dados do arquivo podem ser alocados apenas na primeira vez que alguma posição daquele bloco for escrita (alocação sob demanda).
+
+\section{Controle de tamanho de arquivo}
+\label{sub:controle_de_tamanho_de_arquivo}
+
+Cada arquivo deve ter pelo menos uma propriedade -- o seu tamanho, em bytes. O tamanho de um arquivo corresponde à última posição dentro do arquivo escrita -- i.e. em um arquivo recém criado cuja primeira escrita é no byte de nro 100, o tamanho passa a ser 100.
+
+Um arquivo de 1MBytes possuirá 244 blocos de 4KB. Porém, nem todos esses blocos precisam estar alocados para o arquivo, apenas os blocos que tiveram seus bytes gravados (alocação sob demanda).
+
+\end{document}
